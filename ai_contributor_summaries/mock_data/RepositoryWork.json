@@ -1,0 +1,90 @@
+[
+  {
+    "contributor_id": "alice-developer",
+    "repository_id": "microsoft/vscode",
+    "repository_name": "vscode",
+    "summary": "Contributed to VS Code's extension system, focusing on improving the debugging experience and adding new language support features.",
+    "commit_count": 45,
+    "issue_count": 8,
+    "files_touched": [
+      "src/vs/workbench/contrib/debug/",
+      "extensions/typescript/",
+      "src/vs/platform/"
+    ],
+    "technologies": [
+      "TypeScript",
+      "Node.js",
+      "Electron"
+    ],
+    "contribution_type": "feature_development",
+    "first_contribution": "2023-01-15",
+    "last_contribution": "2024-01-10",
+    "uuid": "ed65fe05-303e-4c73-afb8-aff25fb17e66"
+  },
+  {
+    "contributor_id": "alice-developer",
+    "repository_id": "facebook/react",
+    "repository_name": "react",
+    "summary": "Worked on React's core reconciliation algorithm and contributed to performance improvements in the virtual DOM implementation.",
+    "commit_count": 23,
+    "issue_count": 5,
+    "files_touched": [
+      "packages/react-reconciler/",
+      "packages/react-dom/",
+      "packages/react/"
+    ],
+    "technologies": [
+      "JavaScript",
+      "React",
+      "Flow"
+    ],
+    "contribution_type": "performance_optimization",
+    "first_contribution": "2023-03-20",
+    "last_contribution": "2023-11-28",
+    "uuid": "a5892fb7-2717-4070-8b86-a1d50f2463bc"
+  },
+  {
+    "contributor_id": "bob-security",
+    "repository_id": "kubernetes/kubernetes",
+    "repository_name": "kubernetes",
+    "summary": "Enhanced Kubernetes security features, implemented RBAC improvements, and contributed to pod security standards.",
+    "commit_count": 67,
+    "issue_count": 23,
+    "files_touched": [
+      "pkg/auth/",
+      "pkg/apis/rbac/",
+      "pkg/kubelet/"
+    ],
+    "technologies": [
+      "Go",
+      "Kubernetes",
+      "Docker"
+    ],
+    "contribution_type": "security_enhancement",
+    "first_contribution": "2023-02-10",
+    "last_contribution": "2024-01-05",
+    "uuid": "e4f9b67e-3e60-4298-bc77-6d5d477e56ff"
+  },
+  {
+    "contributor_id": "charlie-ai",
+    "repository_id": "tensorflow/tensorflow",
+    "repository_name": "tensorflow",
+    "summary": "Contributed to TensorFlow's neural network operators and optimized GPU kernels for better performance on NVIDIA hardware.",
+    "commit_count": 34,
+    "issue_count": 7,
+    "files_touched": [
+      "tensorflow/core/kernels/",
+      "tensorflow/python/ops/",
+      "tensorflow/compiler/"
+    ],
+    "technologies": [
+      "Python",
+      "C++",
+      "CUDA"
+    ],
+    "contribution_type": "performance_optimization",
+    "first_contribution": "2023-04-01",
+    "last_contribution": "2023-12-15",
+    "uuid": "a1579eae-5ce2-4366-a4e2-c3365f084173"
+  }
+]
