@@ -32,8 +32,8 @@ class HypermodeOrchestrator:
         self.session = None
         self.friendliai_client = FriendliAIClient()
         
-        # Choose client based on environment
-        if os.getenv('USE_MOCK_WEAVIATE') == 'true':
+        # Choose client based on settings
+        if settings.use_mock_weaviate:
             self.weaviate_client = mock_weaviate_client
         else:
             self.weaviate_client = weaviate_client

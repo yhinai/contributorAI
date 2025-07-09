@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, env="DEBUG")
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
     
+    # Mode Configuration
+    use_mock_weaviate: bool = Field(default=False, env="USE_MOCK_WEAVIATE")
+    
     # Weaviate
     weaviate_url: str = Field(default="http://localhost:8080", env="WEAVIATE_URL")
     weaviate_api_key: Optional[str] = Field(default=None, env="WEAVIATE_API_KEY")
