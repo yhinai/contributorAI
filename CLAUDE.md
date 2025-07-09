@@ -66,6 +66,8 @@ Building a fullstack AI application that automatically generates AI-powered summ
 - ✅ Docker Compose for easy deployment
 - ✅ Comprehensive testing suite
 - ✅ Production-ready features
+- ✅ **Real Data Mode as Default**: Application now uses real Weaviate + GitHub API by default
+- ✅ **Mock Mode Available**: Use --mock flag for development without Docker
 
 ## Build Commands
 
@@ -81,12 +83,38 @@ Building a fullstack AI application that automatically generates AI-powered summ
 - `python run_app.py summarize --mock`: Run AI summarization pipeline
 - `python run_app.py status --mock`: Check system status
 
-### Production Mode
-- `docker-compose up`: Start full stack with Weaviate
+### Production Mode (Real Data - Default)
+- `docker-compose up -d weaviate`: Start Weaviate database
 - `python run_app.py init`: Initialize Weaviate schema
-- `python run_app.py ingest --repo owner/repo --use-github`: Ingest real data
-- `python run_app.py summarize`: Run full AI pipeline
-- `python run_app.py ui`: Launch production UI
+- `python run_app.py ingest --repo microsoft/TypeScript --use-github`: Ingest real GitHub data
+- `python run_app.py status`: Check ingestion status
+- `python run_app.py ui`: Launch UI with real data at http://localhost:8501
+
+### Current Data Status
+- ✅ **912 Contributors**: Ingested from detailed Weaviate organization analysis
+- ✅ **912 Skills Records**: Detailed programming language and domain expertise
+- ✅ **1000+ Repositories**: Repository metadata and characteristics
+- ✅ **1000+ Contributions**: Individual contribution records
+- ✅ **Real Weaviate**: Connected and operational
+- ✅ **LlamaIndex Integration**: Semantic search and intelligent querying
+- ✅ **FriendliAI Profiles**: AI-generated comprehensive contributor profiles
+- ✅ **Enhanced Chatbot**: Available at http://localhost:8501
+
+## Enhanced System Commands
+
+### Weaviate Organization Analysis
+- `python test_system.py`: Test the complete enhanced system
+- `python weaviate_org_setup.py`: Setup enhanced schema and ingest organization data
+- `python weaviate_org_setup.py --skip-profiles`: Skip AI profile generation
+- `python weaviate_org_setup.py --verify-only`: Verify existing data only
+
+### AI-Powered Chatbot
+- `streamlit run streamlit_chatbot.py`: Launch enhanced chatbot with LlamaIndex
+- `python llamaindex_weaviate_integration.py`: Test LlamaIndex integration
+- `python friendli_ai_profiler.py`: Generate AI contributor profiles
+
+### Enhanced Requirements
+- `pip install -r requirements_enhanced.txt`: Install additional AI dependencies
 
 ### Testing
 - `pytest tests/`: Run test suite

@@ -51,7 +51,6 @@ class WeaviateClient:
             issue_schema = {
                 "class": "Issue",
                 "description": "GitHub issues with AI-generated summaries",
-                "vectorizer": "text2vec-openai",
                 "properties": [
                     {"name": "github_id", "dataType": ["string"], "description": "GitHub issue ID"},
                     {"name": "title", "dataType": ["text"], "description": "Issue title"},
@@ -71,7 +70,6 @@ class WeaviateClient:
             commit_schema = {
                 "class": "Commit",
                 "description": "Git commits with AI-generated summaries",
-                "vectorizer": "text2vec-openai",
                 "properties": [
                     {"name": "github_id", "dataType": ["string"], "description": "Commit SHA"},
                     {"name": "message", "dataType": ["text"], "description": "Commit message"},
@@ -92,7 +90,6 @@ class WeaviateClient:
             repo_work_schema = {
                 "class": "RepositoryWork",
                 "description": "Contributor work within specific repositories",
-                "vectorizer": "text2vec-openai",
                 "properties": [
                     {"name": "contributor_id", "dataType": ["string"], "description": "Contributor username"},
                     {"name": "repository_id", "dataType": ["string"], "description": "Repository identifier"},
@@ -112,7 +109,6 @@ class WeaviateClient:
             contributor_schema = {
                 "class": "Contributor",
                 "description": "GitHub contributors with AI-generated profiles",
-                "vectorizer": "text2vec-openai",
                 "properties": [
                     {"name": "github_id", "dataType": ["string"], "description": "GitHub user ID"},
                     {"name": "username", "dataType": ["string"], "description": "GitHub username"},
@@ -167,20 +163,19 @@ class WeaviateClient:
                    limit: int = 100) -> List[Dict]:
         """Query data from specified collection."""
         try:
-            query_builder = self.client.query.get(collection_name)
-            
-            if where_filter:
-                query_builder = query_builder.with_where(where_filter)
-            
-            query_builder = query_builder.with_limit(limit)
-            
             # Get all properties for the class
             schema = self.client.schema.get(collection_name)
             properties = [prop['name'] for prop in schema['properties']]
             
-            # Add properties to query
-            for prop in properties:
-                query_builder = query_builder.with_additional(['id'])
+            # Build GraphQL query
+            query_builder = (
+                self.client.query.get(collection_name, properties)
+                .with_additional(['id'])
+                .with_limit(limit)
+            )
+            
+            if where_filter:
+                query_builder = query_builder.with_where(where_filter)
             
             result = query_builder.do()
             

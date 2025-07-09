@@ -9,7 +9,9 @@ import logging
 from datetime import datetime
 import asyncio
 import os
+from config.settings import settings
 from utils.weaviate_client import weaviate_client
+from utils.mock_weaviate import mock_weaviate_client
 from graph.organization_graph import OrganizationGraph
 from ui.analytics_page import render_analytics_page
 
@@ -21,60 +23,531 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
+# Modern Futuristic UI Styling
 st.markdown("""
 <style>
+    /* Import modern fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    /* Global styles */
+    .stApp {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Hide Streamlit default elements */
+    .stDeployButton, .stDecoration, footer {
+        display: none !important;
+    }
+    
+    /* Main container */
+    .main .block-container {
+        padding: 2rem 1rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* Headers */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .metric-card {
+        font-size: 3rem;
+        font-weight: 700;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
-        margin: 0.5rem;
+        margin-bottom: 3rem;
+        letter-spacing: -0.02em;
+        position: relative;
     }
     
+    .main-header::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 2px;
+    }
+    
+    /* Glassmorphism cards */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        margin: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-8px);
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-card h3 {
+        font-size: 2.5rem;
+        margin: 0;
+        font-weight: 700;
+        color: #ffffff;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    
+    .metric-card p {
+        font-size: 1.1rem;
+        margin: 0.5rem 0 0 0;
+        color: rgba(255, 255, 255, 0.8);
+        font-weight: 500;
+    }
+    
+    /* Enhanced contributor cards */
     .contributor-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 0.5rem;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
     }
     
+    .contributor-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        transition: width 0.3s ease;
+    }
+    
+    .contributor-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+        transition: width 0.3s ease;
+    }
+    
+    .contributor-card:hover::before {
+        width: 6px;
+    }
+    
+    .contributor-card:hover::after {
+        width: 100%;
+    }
+    
+    .contributor-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Enhanced repository cards */
     .repo-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 0.5rem;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
     }
     
+    .repo-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+        background: linear-gradient(135deg, #764ba2, #667eea);
+        transition: width 0.3s ease;
+    }
+    
+    .repo-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(118, 75, 162, 0.1), rgba(102, 126, 234, 0.1));
+        transition: width 0.3s ease;
+    }
+    
+    .repo-card:hover::before {
+        width: 6px;
+    }
+    
+    .repo-card:hover::after {
+        width: 100%;
+    }
+    
+    .repo-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 40px rgba(118, 75, 162, 0.2);
+        border-color: rgba(118, 75, 162, 0.3);
+    }
+    
+    /* Enhanced skill tags */
     .skill-tag {
-        background: #e1f5fe;
-        color: #0277bd;
-        padding: 0.25rem 0.5rem;
-        border-radius: 15px;
-        font-size: 0.8rem;
-        margin: 0.2rem;
+        background: rgba(102, 126, 234, 0.2);
+        color: #667eea;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        margin: 0.3rem;
         display: inline-block;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 500;
+        cursor: default;
+        position: relative;
+        overflow: hidden;
     }
     
+    .skill-tag::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+    
+    .skill-tag:hover::before {
+        left: 100%;
+    }
+    
+    .skill-tag:hover {
+        background: rgba(102, 126, 234, 0.3);
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        border-color: rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Summary boxes */
     .summary-box {
-        background: #f8f9fa;
-        border-left: 4px solid #1f77b4;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border-radius: 0 12px 12px 0;
+        color: rgba(255, 255, 255, 0.9);
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Sidebar text */
+    .css-1d391kg .css-1v0mbdj {
+        color: #ffffff;
+    }
+    
+    /* Enhanced buttons with subtle animation */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.8rem 2.5rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Inter', sans-serif;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100%;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 15px 30px rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Enhanced select boxes */
+    .stSelectbox > div > div {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #ffffff;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stSelectbox > div > div:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(102, 126, 234, 0.5);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Enhanced text inputs */
+    .stTextInput > div > div > input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #ffffff;
+        padding: 0.8rem 1rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stTextInput > div > div > input:focus {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(102, 126, 234, 0.5);
+        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        outline: none;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* Enhanced navigation styling */
+    .css-1d391kg {
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(15px);
+        border-right: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    
+    .css-1d391kg .css-1v0mbdj {
+        color: #ffffff;
+        font-weight: 500;
+    }
+    
+    /* Loading states */
+    .stSpinner {
+        border-color: #667eea;
+    }
+    
+    /* Enhanced form elements */
+    .stSlider > div > div > div {
+        background: rgba(102, 126, 234, 0.2);
+    }
+    
+    .stSlider > div > div > div > div {
+        background: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Enhanced tooltips */
+    .stTooltip {
+        background: rgba(0, 0, 0, 0.9);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Enhanced metrics with subtle glow */
+    .metric-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        margin: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+        transform: rotate(45deg);
+        transition: all 0.3s ease;
+        opacity: 0;
+    }
+    
+    .metric-card:hover::before {
+        opacity: 1;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Enhanced plotly charts */
+    .js-plotly-plot {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Enhanced expander */
+    .streamlit-expanderHeader {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
         padding: 1rem;
-        margin: 1rem 0;
-        border-radius: 0 5px 5px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    /* Enhanced table styling */
+    .stDataFrame {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+    }
+    
+    /* Responsive design with better breakpoints */
+    @media (max-width: 1200px) {
+        .main .block-container {
+            padding: 1.5rem 1rem;
+        }
+        
+        .metric-card {
+            padding: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            margin: 0.5rem;
+            padding: 1.5rem;
+        }
+        
+        .metric-card h3 {
+            font-size: 2rem;
+        }
+        
+        .contributor-card, .repo-card {
+            padding: 1rem;
+        }
+        
+        .main .block-container {
+            padding: 1rem 0.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .main-header {
+            font-size: 1.5rem;
+        }
+        
+        .metric-card {
+            margin: 0.25rem;
+            padding: 1rem;
+        }
+        
+        .metric-card h3 {
+            font-size: 1.5rem;
+        }
+        
+        .skill-tag {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.8rem;
+            margin: 0.2rem;
+        }
+    }
+    
+    /* Loading animation */
+    .loading-spinner {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #764ba2, #667eea);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -99,11 +572,9 @@ def load_data():
     """Load data from Weaviate or mock."""
     try:
         # Check if using mock mode
-        if os.getenv('USE_MOCK_WEAVIATE') == 'true':
-            from utils.mock_weaviate import mock_weaviate_client
+        if settings.use_mock_weaviate:
             client = mock_weaviate_client
         else:
-            from utils.weaviate_client import weaviate_client
             if weaviate_client is None:
                 raise Exception("Weaviate not available")
             client = weaviate_client
@@ -118,18 +589,40 @@ def load_data():
         st.info("💡 Make sure to run the initialization first: `python run_app.py init --mock`")
         return [], [], []
 
-# Load data
+# Load data with enhanced loading experience
 if not st.session_state.data_loaded:
-    with st.spinner("Loading data..."):
+    # Enhanced loading with custom spinner
+    st.markdown('<div class="loading-spinner"></div>', unsafe_allow_html=True)
+    with st.spinner("🔄 Loading data... Please wait"):
         repositories, contributors, repo_works = load_data()
         st.session_state.repositories = repositories
         st.session_state.contributors = contributors
         st.session_state.repo_works = repo_works
         st.session_state.data_loaded = True
 
-# Dashboard Page
+# Dashboard Page with enhanced animations
 if page == "🏠 Dashboard":
     st.markdown('<div class="main-header">🧠 AI Contributor Summaries</div>', unsafe_allow_html=True)
+    
+    # Add subtle intro animation
+    st.markdown("""
+    <div style="
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        animation: fadeIn 1s ease-in-out;
+    ">
+        Discover insights from your development team's contributions
+    </div>
+    
+    <style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
     
     # Metrics overview
     col1, col2, col3, col4 = st.columns(4)
@@ -210,6 +703,18 @@ if page == "🏠 Dashboard":
 elif page == "📁 Repository Explorer":
     st.markdown('<div class="main-header">📁 Repository Explorer</div>', unsafe_allow_html=True)
     
+    st.markdown("""
+    <div style="
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        animation: fadeIn 1s ease-in-out;
+    ">
+        Explore repositories and their contribution patterns
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Search and filter
     search_term = st.text_input("🔍 Search repositories...", placeholder="Enter repository name or technology")
     
@@ -275,6 +780,18 @@ elif page == "📁 Repository Explorer":
 # Contributor Explorer Page
 elif page == "👤 Contributor Explorer":
     st.markdown('<div class="main-header">👤 Contributor Explorer</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        animation: fadeIn 1s ease-in-out;
+    ">
+        Discover talented contributors and their expertise
+    </div>
+    """, unsafe_allow_html=True)
     
     # Search and filter
     search_term = st.text_input("🔍 Search contributors...", placeholder="Enter username or skill")
@@ -356,6 +873,18 @@ elif page == "👤 Contributor Explorer":
 # Graph View Page
 elif page == "🌐 Graph View":
     st.markdown('<div class="main-header">🌐 Organization Graph</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        animation: fadeIn 1s ease-in-out;
+    ">
+        Visualize the network of contributors and repositories
+    </div>
+    """, unsafe_allow_html=True)
     
     # Graph controls
     col1, col2, col3 = st.columns(3)
@@ -451,17 +980,34 @@ elif page == "🌐 Graph View":
 elif page == "📊 Advanced Analytics":
     render_analytics_page(st.session_state.contributors, st.session_state.repo_works)
 
-# Footer
-st.markdown("---")
+# Enhanced footer with better styling
+st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
 st.markdown("""
-<div style="text-align: center; color: #666; margin-top: 2rem;">
-    <p>🧠 AI Contributor Summaries - Powered by FriendliAI, Weaviate, and Hypermode</p>
-    <p>Built with Streamlit • Data refreshed every 5 minutes</p>
+<div style="
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 3rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+">
+    <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">🧠 AI Contributor Summaries</p>
+    <p style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.5);">
+        Powered by FriendliAI, Weaviate, and Hypermode • Built with Streamlit
+    </p>
+    <p style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.4); margin-top: 0.5rem;">
+        Data refreshed every 5 minutes
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
-# Refresh button
-if st.button("🔄 Refresh Data"):
-    st.cache_data.clear()
-    st.session_state.data_loaded = False
-    st.rerun()
+# Enhanced refresh button with better placement
+st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 1, 1])
+with col2:
+    if st.button("🔄 Refresh Data", key="refresh_btn"):
+        st.cache_data.clear()
+        st.session_state.data_loaded = False
+        st.rerun()
