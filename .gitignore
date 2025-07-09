@@ -1,1 +1,5 @@
 ai_contributor_summaries/.env
+__pycache__/
+lib/
+ui_test.log
+*.pyc

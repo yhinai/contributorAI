@@ -133,15 +133,17 @@ class TestGitHubClient:
     @pytest.mark.asyncio
     async def test_fetch_commits(self, github_client):
         """Test commits fetching with pagination."""
+        # Mock response with 100 commits per page to trigger pagination
         mock_response1 = Mock()
         mock_response1.json.return_value = [
-            {"sha": "abc123", "commit": {"message": "First commit"}},
-            {"sha": "def456", "commit": {"message": "Second commit"}}
+            {"sha": f"commit{i}", "commit": {"message": f"Commit {i}"}} for i in range(100)
         ]
         mock_response1.raise_for_status = Mock()
         
         mock_response2 = Mock()
-        mock_response2.json.return_value = []  # Empty response to stop pagination
+        mock_response2.json.return_value = [
+            {"sha": "final_commit", "commit": {"message": "Final commit"}}
+        ]
         mock_response2.raise_for_status = Mock()
         
         with patch.object(github_client, 'session') as mock_session:
@@ -149,9 +151,10 @@ class TestGitHubClient:
             
             result = await github_client.fetch_commits("owner", "repo", max_pages=2)
             
-            assert len(result) == 2
-            assert result[0]["sha"] == "abc123"
-            assert result[1]["sha"] == "def456"
+            assert len(result) == 101  # 100 from first page + 1 from second page
+            assert result[0]["sha"] == "commit0"
+            assert result[99]["sha"] == "commit99"
+            assert result[100]["sha"] == "final_commit"
             assert mock_session.get.call_count == 2
     
     @pytest.mark.asyncio
